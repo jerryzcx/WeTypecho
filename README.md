@@ -1,3 +1,9 @@
+## 注意 by zj ##
+注意该插件安装时要修改为
+we-typecho-plugin  	======>  WeTypecho
+另外一个小程序目录干脆也修改为
+wetypecho			======>  wetypecho-mp
+
 ## 更新计划 ##
 [更新计划与进度][1]
 
