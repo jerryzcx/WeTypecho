@@ -586,13 +586,16 @@ class WeTypecho_Action extends Typecho_Widget implements Widget_Interface_Do {
         $result = array();
         if(sizeof($cids)>0){
             foreach($cids as $cid) {
-                $post = $this->db->fetchAll($this->db->select('cid', 'title', 'created', 'type', 'slug','commentsNum')->from('table.contents')->where('cid = ?', $cid)->where('status = ?', 'publish')->where('type = ?', 'post')->where('created < ?', time()));                
+                $post = $this->db->fetchAll($this->db->select('cid', 'title', 'created', 'type', 'slug','commentsNum','views','likes','text')->from('table.contents')->where('cid = ?', $cid)->where('status = ?', 'publish')->where('type = ?', 'post')->where('created < ?', time()));                
                 if(sizeof($post)>0 && $post[0]!=null) {
-                    $post[0]        = $this->widget("Widget_Abstract_Contents")->push($post[0]);                  
-                    $post[0]['tag'] = $this->db->fetchAll($this->db->select('name')->from('table.metas')->join('table.relationships', 'table.metas.mid = table.relationships.mid', Typecho_DB::LEFT_JOIN)->where('table.relationships.cid = ?', $cid)->where('table.metas.type = ?', 'tag'));
-                    $post[0]['thumb'] = $this->db->fetchAll($this->db->select('str_value')->from('table.fields')->where('cid = ?', $cid))?$this->db->fetchAll($this->db->select('str_value')->from('table.fields')->where('cid = ?', $cid)):array(array("str_value"=>$this->IMG_URL_DEFAULT));
-                    $post[0]['views'] = $this->db->fetchAll($this->db->select('views')->from('table.contents')->where('table.contents.cid = ?', $cid));
-                    $post[0]['likes'] = $this->db->fetchAll($this->db->select('likes')->from('table.contents')->where('table.contents.cid = ?', $cid));
+                    // $post[0]        = $this->widget("Widget_Abstract_Contents")->push($post[0]);                  
+                    // $post[0]['tag'] = $this->db->fetchAll($this->db->select('name')->from('table.metas')->join('table.relationships', 'table.metas.mid = table.relationships.mid', Typecho_DB::LEFT_JOIN)->where('table.relationships.cid = ?', $cid)->where('table.metas.type = ?', 'tag'));
+                    // $post[0]['thumb'] = $this->db->fetchAll($this->db->select('str_value')->from('table.fields')->where('cid = ?', $cid))?$this->db->fetchAll($this->db->select('str_value')->from('table.fields')->where('cid = ?', $cid)):array(array("str_value"=>$this->IMG_URL_DEFAULT));
+                    // $post[0]['views'] = $this->db->fetchAll($this->db->select('views')->from('table.contents')->where('table.contents.cid = ?', $cid));
+                    // $post[0]['likes'] = $this->db->fetchAll($this->db->select('likes')->from('table.contents')->where('table.contents.cid = ?', $cid));
+                    $strTemp = self::get_post_thumbnail($post[0]['text']);
+                    unset ($post[0]['text']);
+                    $post[0]['thumb_in'] = $strTemp;
                     $result[]    = $post[0];
                 }
             }
