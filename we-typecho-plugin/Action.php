@@ -443,6 +443,26 @@ class WeTypecho_Action extends Typecho_Widget implements Widget_Interface_Do {
         }
     }
 
+    private function get_post_thumbnail($content)
+    {
+            $pattern = '/\<img.*?src\=\"(.*?)\"[^>]*>/i'; 
+            $patternMD = '/\!\[.*?\]\((http(s)?:\/\/.*?(jpg|png))/i';
+            $patternMDfoot = '/\[.*?\]:\s*(http(s)?:\/\/.*?(jpg|png))/i';
+            if (preg_match_all($pattern, $content, $thumbUrl)) {
+               // $ctu = $thumbUrl[1][0];
+                $ctu = $thumbUrl[1];
+            }
+            else if (preg_match_all($patternMD, $content, $thumbUrl)) {
+               // $ctu = $thumbUrl[1][0];  //如果是内联式markdown格式的图片
+                $ctu = $thumbUrl[1];  //如果是内联式markdown格式的图片
+            }
+            else if(preg_match_all($patternMDfoot, $content, $thumbUrl)) {
+               // $ctu = $thumbUrl[1][0]; //如果是脚注式markdown格式的图片
+                $ctu = $thumbUrl[1]; //如果是脚注式markdown格式的图片
+            }
+            return $ctu;
+    }
+
     private function getpostbymid()
     {
         $sec = self::GET('apisec', 'null');
@@ -452,13 +472,28 @@ class WeTypecho_Action extends Typecho_Widget implements Widget_Interface_Do {
         $mid = self::GET('mid', -1);
         $select = [];
         if($mid == 99999999) {
-            $posts = $this->db->fetchAll($this->db->select('cid', 'title', 'created', 'type', 'slug','commentsNum')->from('table.contents')->where('type = ?', 'post')->where('status = ?', 'publish')->where('created < ?', time())->order('table.contents.created', Typecho_Db::SORT_DESC)->limit(10));
+            $posts = $this->db->fetchAll($this->db->select('cid', 'title', 'created', 'type', 'slug','commentsNum','text','views','likes')->from('table.contents')->where('type = ?', 'post')->where('status = ?', 'publish')->where('created < ?', time())->order('table.contents.created', Typecho_Db::SORT_DESC)->limit(10));
             foreach($posts as $post) {
+                /*
                 $temp = $this->db->fetchAll($this->db->select('cid', 'title', 'created','commentsNum', 'views', 'likes')->from('table.contents')->where('cid = ?', $post['cid'])->where('status = ?', 'publish'));				
                 if(sizeof($temp)>0) {
-                    $temp['0']['thumb'] = $this->db->fetchAll($this->db->select('str_value')->from('table.fields')->where('cid = ?', $post['cid']));
+                    // $temp['0']['thumb'] = $this->db->fetchAll($this->db->select('str_value')->from('table.fields')->where('cid = ?', $post['cid']));
+                    $strTemp = $this->db->fetchAll($this->db->select('str_value')->from('table.fields')->where('cid = ?', $post['cid']));
+                    // $str="log:".is_string($temp[0]['text'])."\r\n";
+                    // file_put_contents('/www/wwwroot/typecho/usr/plugins/WeTypecho/test.log',$str);
+                    if (empty($strTemp)){
+                        $strTemp = self::get_post_thumbnail($post['text']);
+                        $temp['0']['thumb_in'] = $strTemp;
+                    } else {
+                        $temp['0']['thumb'] = $strTemp;    
+                    }
                     array_push($select,$temp[0]);
                 }
+                */
+                $strTemp = self::get_post_thumbnail($post['text']);
+                unset ($post['text']);
+                $post['thumb_in'] = $strTemp;
+                array_push($select,$post);
             }
             if(sizeof($posts)>0) {
                 $this->export($select);
@@ -472,12 +507,27 @@ class WeTypecho_Action extends Typecho_Widget implements Widget_Interface_Do {
             if($except != 'null') {
                 $posts = $this->db->fetchAll($this->db->select('cid','mid')->from('table.relationships')->where('mid = ?', $mid)->where('cid != ?', $except));
             } else {
-            $posts = $this->db->fetchAll($this->db->select('cid','mid')->from('table.relationships')->where('mid = ?', $mid));
+                $posts = $this->db->fetchAll($this->db->select('cid','mid')->from('table.relationships')->where('mid = ?', $mid));
             }
             foreach($posts as $post) {   
-                $temp = $this->db->fetchAll($this->db->select('cid', 'title', 'created','commentsNum', 'views', 'likes')->from('table.contents')->where('cid = ?', $post['cid'])->where('status = ?', 'publish'));				
+                $temp = $this->db->fetchAll($this->db->select('cid', 'title', 'created','commentsNum', 'views', 'likes','text')->from('table.contents')->where('cid = ?', $post['cid'])->where('status = ?', 'publish'));	
+                /*			
                 if(sizeof($temp)>0) {
-                    $temp['0']['thumb'] = $this->db->fetchAll($this->db->select('str_value')->from('table.fields')->where('cid = ?', $post['cid']));
+                    // $temp['0']['thumb'] = $this->db->fetchAll($this->db->select('str_value')->from('table.fields')->where('cid = ?', $post['cid']));
+                    $strTemp = $this->db->fetchAll($this->db->select('str_value')->from('table.fields')->where('cid = ?', $post['cid']));
+                    if (empty($strTemp)){
+                        $strTemp = self::get_post_thumbnail($temp['text']);
+                        $temp['0']['thumb_in'] = $strTemp;
+                    } else {
+                        $temp['0']['thumb'] = $strTemp;    
+                    }
+                    array_unshift($select,$temp[0]);
+                }
+                */
+                if(sizeof($temp)>0) {
+                    $strTemp = self::get_post_thumbnail($temp['0']['text']);
+                    unset ($temp['0']['text']);
+                    $temp['0']['thumb_in'] = $strTemp;
                     array_unshift($select,$temp[0]);
                 }
                 $limit++;
