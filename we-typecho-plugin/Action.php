@@ -3,6 +3,7 @@ header('Access-Control-Allow-Origin: *');
 class WeTypecho_Action extends Typecho_Widget implements Widget_Interface_Do {
     // const IMG_URL_DEFAULT = "https://api.isoyu.com/bing_images.php"
     const IMG_URL_DEFAULT = '';
+    const MID_DEFAULT = '99999999';
     private $db;
     private $res;
     const LACK_PARAMETER = 'Not found';
@@ -144,7 +145,7 @@ class WeTypecho_Action extends Typecho_Widget implements Widget_Interface_Do {
         $cat_recent = $cat[0];
         $cat_recent['name'] = "最近发布";
         $cat_recent['slug'] = "最近发布";
-        $cat_recent['mid'] = "99999999";
+        $cat_recent['mid'] = $this->MID_DEFAULT;
         array_unshift($cat,$cat_recent);
         }
         $this->export($cat);
@@ -471,7 +472,7 @@ class WeTypecho_Action extends Typecho_Widget implements Widget_Interface_Do {
         $except = (int) self::GET('except', 'null');
         $mid = self::GET('mid', -1);
         $select = [];
-        if($mid == 99999999) {
+        if($mid == $this->MID_DEFAULT) {
             $posts = $this->db->fetchAll($this->db->select('cid', 'title', 'created', 'type', 'slug','commentsNum','text','views','likes')->from('table.contents')->where('type = ?', 'post')->where('status = ?', 'publish')->where('created < ?', time())->order('table.contents.created', Typecho_Db::SORT_DESC)->limit(10));
             foreach($posts as $post) {
                 /*
