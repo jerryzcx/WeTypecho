@@ -444,25 +444,7 @@ class WeTypecho_Action extends Typecho_Widget implements Widget_Interface_Do {
         }
     }
 
-    private function get_post_thumbnail($content)
-    {
-            $pattern = '/\<img.*?src\=\"(.*?)\"[^>]*>/i'; 
-            $patternMD = '/\!\[.*?\]\((http(s)?:\/\/.*?(jpg|png))/i';
-            $patternMDfoot = '/\[.*?\]:\s*(http(s)?:\/\/.*?(jpg|png))/i';
-            if (preg_match_all($pattern, $content, $thumbUrl)) {
-               // $ctu = $thumbUrl[1][0];
-                $ctu = $thumbUrl[1];
-            }
-            else if (preg_match_all($patternMD, $content, $thumbUrl)) {
-               // $ctu = $thumbUrl[1][0];  //如果是内联式markdown格式的图片
-                $ctu = $thumbUrl[1];  //如果是内联式markdown格式的图片
-            }
-            else if(preg_match_all($patternMDfoot, $content, $thumbUrl)) {
-               // $ctu = $thumbUrl[1][0]; //如果是脚注式markdown格式的图片
-                $ctu = $thumbUrl[1]; //如果是脚注式markdown格式的图片
-            }
-            return $ctu;
-    }
+
 
     private function getpostbymid()
     {
@@ -659,5 +641,119 @@ class WeTypecho_Action extends Typecho_Widget implements Widget_Interface_Do {
     }
     public function action() {
         $this->on($this->request);
+    }
+    /**************************************************************************************
+     by zj and tm
+    ***************************************************************************************/
+
+    private function get_post_thumbnail($content)
+    {
+            $pattern = '/\<img.*?src\=\"(.*?)\"[^>]*>/i'; 
+            $patternMD = '/\!\[.*?\]\((http(s)?:\/\/.*?(jpg|png))/i';
+            $patternMDfoot = '/\[.*?\]:\s*(http(s)?:\/\/.*?(jpg|png))/i';
+            if (preg_match_all($pattern, $content, $thumbUrl)) {
+               // $ctu = $thumbUrl[1][0];
+                $ctu = $thumbUrl[1];
+            }
+            else if (preg_match_all($patternMD, $content, $thumbUrl)) {
+               // $ctu = $thumbUrl[1][0];  //如果是内联式markdown格式的图片
+                $ctu = $thumbUrl[1];  //如果是内联式markdown格式的图片
+            }
+            else if(preg_match_all($patternMDfoot, $content, $thumbUrl)) {
+               // $ctu = $thumbUrl[1][0]; //如果是脚注式markdown格式的图片
+                $ctu = $thumbUrl[1]; //如果是脚注式markdown格式的图片
+            }
+            return $ctu;
+    }
+    
+    private function log($value='')
+    {
+        $str=$value."\r\n";
+        file_put_contents('/www/wwwroot/typecho/usr/plugins/WeTypecho/test.log',$str);
+    }
+
+    public function getPostsByMid()
+    {
+        $sec = self::GET('apisec', 'null');
+        self::checkApisec($sec);
+
+        $result = array();
+        $offset = (int) self::GET('offset', 0);
+        $limit = (int) self::GET('limit', 10);
+        $mid = self::GET('mid', -1);
+        
+        $posts = null;
+        if($mid == $this->MID_DEFAULT) {
+            $posts = $this->db->fetchAll($this->db->select('cid', 'title', 'created', 'type', 'slug','commentsNum','text','views','likes')->from('table.contents')->where('type = ?', 'post')->where('status = ?', 'publish')->where('created < ?', time())->order('table.contents.created', Typecho_Db::SORT_DESC)->offset($offset)->limit($limit));
+            
+        }
+        else if($mid>=0) {
+            $posts = $this->db->fetchAll($this->db->select('cid','mid')->from('table.relationships')->where('mid = ?', $mid));
+            $arrCid = [];
+            foreach ($posts as $post) 
+            {
+                $arrCid[] = $post['cid']; // means array_push
+            }
+            $posts = $this->db->fetchAll($this->db->select('cid', 'title', 'created','commentsNum', 'views', 'likes','text')->from('table.contents')->where('cid in ?', $arrCid)->where('status = ?', 'publish')->where('created < ?', time())->order('table.contents.created', Typecho_Db::SORT_DESC)->offset($offset)->limit($limit));
+        }
+
+        foreach($posts as $post) {
+            $strTemp = self::get_post_thumbnail($post['text']);
+            unset ($post['text']);
+            $post['thumb_in'] = $strTemp;
+            array_push($result,$post);
+        }
+
+        $this->export($result);
+    }
+
+    private function getCats()
+    {
+        $sec = self::GET('apisec', 'null');
+        self::checkApisec($sec);
+
+        $result = array();
+        $temp = Typecho_Widget::widget('Widget_Options')->plugin('WeTypecho')->hiddenmid;                
+
+        $select = $this->db->select('name','slug','type','description','mid')->from('table.metas')->where('table.metas.type = ?','category');  
+        $needShowMids = explode(",",$temp);
+        $flag = false;
+        if(sizeof($needShowMids)>0 && intval($needShowMids[0])) {        
+            $select->where('mid in ?', $needShowMids);
+            $flag = true;
+        }
+        $result = $this->db->fetchAll($select);
+        if($flag){ // 如果填了“要在小程序端显示的分类的mid(其余隐藏)”这个选项
+            // 不处理，输入所填分类
+        }else {// 如果没填 ，就添加一个“最近发布”分类
+            $cat_recent = $result[0];
+            $cat_recent['name'] = "最近发布";
+            $cat_recent['slug'] = "最近发布";
+            $cat_recent['mid'] = $this->MID_DEFAULT;
+            array_unshift($result,$cat_recent);
+        }
+        $this->export($result);
+    }
+
+    private function getSwiperPosts()
+    {
+        $sec = self::GET('apisec', 'null');
+        self::checkApisec($sec);
+
+        $result = array();
+        $swipe = Typecho_Widget::widget('Widget_Options')->plugin('WeTypecho')->swipePosts;
+        $cids = explode(",",$swipe);
+        
+        $posts = null;
+        if(sizeof($cids)>0){
+            $posts = $this->db->fetchAll($this->db->select('cid', 'title', 'created', 'type', 'slug','commentsNum','views','likes','text')->from('table.contents')->where('cid in ?', $cids)->where('status = ?', 'publish')->where('type = ?', 'post')->where('created < ?', time()));  
+        }
+        foreach($posts as $post) {
+            $strTemp = self::get_post_thumbnail($post['text']);
+            unset ($post['text']);
+            $post['thumb_in'] = $strTemp;
+            array_push($result,$post);
+        }
+        $this->export($result);
     }
 }
