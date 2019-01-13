@@ -920,4 +920,36 @@ class WeTypecho_Action extends Typecho_Widget implements Widget_Interface_Do {
         $result['status'] = $status;
         $this->export($result);
     }
+
+    private function getPostLikeInfo()
+    {
+        $sec = self::GET('apisec');
+        self::checkApisec($sec);
+
+        $cid = self::GET('cid');
+        if($cid != null)
+        {
+            $openids = $this->db->fetchAll($this->db->select('openid')->from('table.wetypecholike')->where('cid = ?', $cid));
+            if(!empty($openids)){
+                $arrOpenid = [];
+                foreach ($openids as $openid) 
+                {
+                    $arrOpenid[] = $openid['openid']; // means array_push
+                }
+                $likeInfo = $this->db->fetchAll($this->db->select('nickname','avatarUrl')->from('table.wetypecho')->where('openid in ?', $arrOpenid)); 
+                $this->export($likeInfo);
+            }
+        }
+        else
+        {
+            $this->export("error cid null", 400);
+        }
+    }
+
+    private function getAboutId()
+    {
+        $cid = Typecho_Widget::widget('Widget_Options')->plugin('WeTypecho')->aboutCid; 
+
+        $this->export($cid);
+    }
 }
