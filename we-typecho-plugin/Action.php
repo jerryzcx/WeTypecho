@@ -804,7 +804,7 @@ class WeTypecho_Action extends Typecho_Widget implements Widget_Interface_Do {
         }
     }
 
-    private function postDetail() {
+    private function detail() {
         
 
         $sec = self::GET('apisec');
@@ -816,7 +816,7 @@ class WeTypecho_Action extends Typecho_Widget implements Widget_Interface_Do {
         
         $post = null;
         if($cid>=0) {
-            $post = $this->db->fetchRow($this->db->select('cid', 'title', 'created', 'type', 'slug', 'text','commentsNum','views','likes')->from('table.contents')->where('type = ?', 'post')->where('status = ?', 'publish')->where('cid = ?', $cid));
+            $post = $this->db->fetchRow($this->db->select('cid', 'title', 'created', 'type', 'slug', 'text','commentsNum','views','likes')->from('table.contents')->where('status = ?', 'publish')->where('cid = ?', $cid));
             if($post!=null){
                 // 阅读数+1
                 $this->db->query($this->db->update('table.contents')->rows(array('views' => (int)$post['views']+1))->where('cid = ?', $cid));
