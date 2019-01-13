@@ -880,8 +880,9 @@ class WeTypecho_Action extends Typecho_Widget implements Widget_Interface_Do {
             {
                 $arrCid[] = $post['cid']; // means array_push
             }
-            $posts = $this->db->fetchAll($this->db->select('cid', 'title', 'created','commentsNum', 'views', 'likes','text')->from('table.contents')->where('cid in ?', $arrCid)->where('status = ?', 'publish')->where('created < ?', time())->order('table.contents.created', Typecho_Db::SORT_DESC)->offset($offset)->limit($limit));
+            $posts = $this->db->fetchAll($this->db->select('cid', 'title', 'created','commentsNum', 'views', 'likes','text')->from('table.contents')->where('cid in ?', $arrCid)->where('status = ?', 'publish')->where('created < ?', time())->order('table.contents.created', Typecho_Db::SORT_DESC)->offset($offset)->limit($limit*3));
         }
+
 
         foreach($posts as $post) {
             $strTemp = self::get_post_thumbnail($post['text']);
@@ -890,6 +891,7 @@ class WeTypecho_Action extends Typecho_Widget implements Widget_Interface_Do {
             array_push($result,$post);
         }
         shuffle($result);
+        $result = array_slice($result,0,$limit);
         $this->export($result);
     }
 
