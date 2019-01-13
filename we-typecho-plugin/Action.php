@@ -765,14 +765,14 @@ class WeTypecho_Action extends Typecho_Widget implements Widget_Interface_Do {
         self::checkApisec($sec);
 
         $code = self::GET('code');
-        if($code != 'null')
+        if( $code != null && $code != '' ) 
         {
-            $nickname = self::GET('nickname', 'null');
-            $avatarUrl = self::GET('avatarUrl', 'null');
-            $city = self::GET('city', 'null');
-            $country = self::GET('country', 'null');
-            $gender = self::GET('gender', 'null');
-            $province = self::GET('province', 'null');
+            $nickname = self::GET('nickname');
+            $avatarUrl = self::GET('avatarUrl');
+            $city = self::GET('city');
+            $country = self::GET('country');
+            $gender = self::GET('gender');
+            $province = self::GET('province');
 
             $url = sprintf('https://api.weixin.qq.com/sns/jscode2session?appid=%s&secret=%s&js_code=%s&grant_type=authorization_code',$this->appid,$this->appsecret,$code);
             $info = file_get_contents($url);
