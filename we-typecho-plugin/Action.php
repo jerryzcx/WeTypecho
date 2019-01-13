@@ -871,6 +871,10 @@ class WeTypecho_Action extends Typecho_Widget implements Widget_Interface_Do {
             $mid=$row['mid'];
             $posts = $this->db->fetchAll($this->db->select('cid','mid')->from('table.relationships')->where('mid = ?', $mid)
                 ->where('cid != ?', $cid));
+            if(empty($posts)){
+                $this->export(null);
+                return;
+            }
             $arrCid = [];
             foreach ($posts as $post) 
             {
